@@ -3,413 +3,540 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Calculadora Táctil Profesional - Caja</title>
+    <title>Remesa BCP - Conteo Dinámico por Fajos</title>
     <style>
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+        /* VARIABLES DE COLOR BCP Y COLORES NEÓN PARA LOS FAJOS */
+        :root {
+            --bcp-blue: #002A8D;
+            --bcp-orange: #FF7900;
+            --bg-color: #f4f6f9;
+            --text-main: #1e293b;
+            --card-bg: #ffffff;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            margin: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            padding-bottom: 20px;
             user-select: none;
-            touch-action: manipulation;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f2f5;
-            height: 100vh;
-            width: 100vw;
+        /* NAVEGACIÓN */
+        .tab-container {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            background: var(--card-bg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .phone-frame {
-            width: 100%;
-            max-width: 430px;
-            height: 100%;
-            background-color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .display {
+        .tab-btn {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: flex-end;
-            padding: 24px 20px;
-            word-break: break-all;
-            background: #ffffff;
-        }
-
-        .d-expression {
-            font-size: 48px;
-            font-weight: 500;
-            color: #1a1a1a;
-            min-height: 58px;
-            text-align: right;
-            line-height: 1.2;
-            width: 100%;
-        }
-
-        .d-result {
-            font-size: 26px;
-            color: #888888;
-            min-height: 32px;
-            margin-top: 6px;
-            font-weight: 400;
-            text-align: right;
-            width: 100%;
-        }
-
-        .utility-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            background: #ffffff;
-        }
-
-        .utility-btn {
+            padding: 16px 0;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 800;
+            color: #64748b;
             background: none;
             border: none;
+            border-bottom: 4px solid transparent;
             cursor: pointer;
-            color: #555;
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
+            transition: 0.2s;
         }
 
-        .utility-btn:active {
-            background-color: #f2f2f2;
+        .tab-btn.active {
+            color: var(--bcp-blue);
+            border-bottom: 4px solid var(--bcp-orange);
+            background-color: #f8fafc;
         }
 
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1px;
-            background-color: #ebebeb;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-
-        button.key {
-            background-color: #ffffff;
-            border: none;
-            outline: none;
-            height: 74px;
-            font-size: 28px;
-            font-weight: 500;
-            color: #1a1a1a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        button.key:active {
-            background-color: #e5e5e5;
-        }
-
-        button.key.op {
-            color: #2b78e4;
-            font-size: 28px;
-        }
-
-        button.key.clear {
-            color: #e74c3c;
-        }
-
-        button.key.equals {
-            background-color: #27ae60;
-            color: #ffffff;
-            font-size: 32px;
-        }
-
-        button.key.equals:active {
-            background-color: #219150;
-        }
-
-        .history-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.4);
+        .tab-content {
             display: none;
-            z-index: 50;
+            padding: 15px;
+            animation: fadeIn 0.25s ease;
         }
 
-        .history-panel {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 70%;
-            background: #ffffff;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
+        .tab-content.active {
+            display: block;
         }
 
-        .history-header {
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* PESTAÑA TOTAL */
+        .resumen-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid var(--bcp-blue);
+            position: relative;
+        }
+
+        .resumen-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid #eee;
+            padding: 12px 0;
+            border-bottom: 1px dashed #cbd5e1;
         }
+        .resumen-row:last-child { border-bottom: none; }
 
-        .history-header h3 {
-            margin: 0;
-            font-size: 17px;
-            color: #333;
-        }
-
-        .history-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px 20px;
+        .resumen-left {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 4px;
         }
 
-        .history-item {
-            text-align: right;
-            border-bottom: 1px solid #f5f5f5;
-            padding-bottom: 10px;
-            cursor: pointer;
+        .resumen-denom { font-size: 24px; font-weight: 900; color: var(--text-main); }
+
+        /* ESTILOS DEL CONTADOR DE BILLETES (INACTIVO) */
+        .resumen-qty {
+            font-size: 18px;
+            font-weight: 900;
+            color: #94a3b8;
+            background: #f1f5f9;
+            padding: 2px 10px;
+            border-radius: 6px;
+            align-self: flex-start;
+            transition: all 0.3s ease;
         }
 
-        .history-item-expr {
-            font-size: 15px;
-            color: #777;
+        /* DINÁMICA DE COLORES POR LOTES/FAJOS */
+        .resumen-qty.lote-1 { background-color: #ccff00; color: #000; box-shadow: 0 0 8px rgba(204, 255, 0, 0.6); }
+        .resumen-qty.lote-2 { background-color: #ff9900; color: #000; box-shadow: 0 0 8px rgba(255, 153, 0, 0.6); }
+        .resumen-qty.lote-3 { background-color: #00e5ff; color: #000; box-shadow: 0 0 8px rgba(0, 229, 255, 0.6); }
+        .resumen-qty.lote-4 { background-color: #ff00ff; color: #fff; box-shadow: 0 0 8px rgba(255, 0, 255, 0.6); }
+
+        .resumen-subtotal { font-size: 22px; font-weight: 700; color: var(--text-main); }
+
+        .gran-total-box {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 3px solid var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .history-item-res {
-            font-size: 20px;
-            color: #27ae60;
-            font-weight: bold;
-        }
+        .gran-total-label { font-size: 24px; font-weight: 900; }
+        .gran-total-monto { font-size: 28px; font-weight: 900; color: var(--bcp-blue); }
 
-        .empty-history {
+        .leyenda-colores {
+            font-size: 11px;
+            color: #64748b;
             text-align: center;
-            color: #aaa;
-            margin-top: 30px;
+            margin-top: 10px;
+            font-weight: 600;
         }
+
+        /* PESTAÑA BILLETES */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card-denom { font-size: 22px; font-weight: 900; color: var(--bcp-blue); width: 70px; }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid #cbd5e1;
+            width: 140px;
+            justify-content: space-between;
+        }
+
+        .btn-control {
+            background: white;
+            border: 1px solid #cbd5e1;
+            font-size: 24px;
+            font-weight: 700;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn-control:active { background: #e2e8f0; }
+
+        .input-qty {
+            width: 50px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            border: none;
+            background: transparent;
+            outline: none;
+            color: #000;
+        }
+
+        .btn-save {
+            background-color: var(--bcp-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            height: 48px;
+            padding: 0 15px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,42,141,0.3);
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.1;
+        }
+        .btn-save:active { transform: scale(0.95); background-color: var(--bcp-orange); }
+        .btn-save.success { background-color: #10b981; }
+
+        .action-bar { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
+        .btn-global { flex: 1; padding: 12px; font-size: 15px; font-weight: 700; border-radius: 8px; cursor: pointer; border: none; text-align: center; }
+
+        .btn-borrar-input { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .btn-borrar-input:active { background: #e2e8f0; }
+
+        .btn-guardar-todo { background: var(--bcp-orange); color: white; box-shadow: 0 2px 4px rgba(255,121,0,0.3); }
+        .btn-guardar-todo:active { transform: scale(0.98); }
+
+        /* BOTÓN DE ENVÍO A GOOGLE SHEETS */
+        .btn-enviar-sheets { 
+            background-color: #10b981; 
+            color: white; 
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4); 
+            margin-top: 15px; 
+            width: 100%; 
+            font-size: 16px;
+            transition: 0.2s;
+        }
+        .btn-enviar-sheets:active { transform: scale(0.98); background-color: #059669; }
+
+        .btn-peligro { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; margin-top: 12px; width: 100%; transition: 0.2s; }
+        .btn-peligro:active { background: #f87171; color: white; transform: scale(0.98); }
+
     </style>
 </head>
 <body>
 
-<div class="phone-frame">
-    <div class="display">
-        <div class="d-expression" id="displayArea">0</div>
-        <div class="d-result" id="liveResultArea"></div>
+    <!-- NAVEGACIÓN -->
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="openTab(event, 'Total')">📋 TOTAL</button>
+        <button class="tab-btn" onclick="openTab(event, 'Billetes')">💵 BILLETES</button>
     </div>
 
-    <div class="utility-bar">
-        <button type="button" class="utility-btn" id="btnHistory" title="Historial">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-        </button>
-        <button type="button" class="utility-btn" id="btnBackspace" title="Retroceso">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path><line x1="18" y1="9" x2="12" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line></svg>
-        </button>
-    </div>
+    <!-- PESTAÑA: TOTAL -->
+    <div id="Total" class="tab-content active">
+        <div class="resumen-container">
 
-    <div class="keypad">
-        <button type="button" class="key clear" data-action="clear">C</button>
-        <button type="button" class="key op" data-action="parens">( )</button>
-        <button type="button" class="key op" data-val="%">%</button>
-        <button type="button" class="key op" data-val="÷">÷</button>
-
-        <button type="button" class="key" data-val="7">7</button>
-        <button type="button" class="key" data-val="8">8</button>
-        <button type="button" class="key" data-val="9">9</button>
-        <button type="button" class="key op" data-val="×">×</button>
-
-        <button type="button" class="key" data-val="4">4</button>
-        <button type="button" class="key" data-val="5">5</button>
-        <button type="button" class="key" data-val="6">6</button>
-        <button type="button" class="key op" data-val="-">-</button>
-
-        <button type="button" class="key" data-val="1">1</button>
-        <button type="button" class="key" data-val="2">2</button>
-        <button type="button" class="key" data-val="3">3</button>
-        <button type="button" class="key op" data-val="+">+</button>
-
-        <button type="button" class="key op" data-action="plusminus">±</button>
-        <button type="button" class="key" data-val="0">0</button>
-        <button type="button" class="key" data-val=".">.</button>
-        <button type="button" class="key equals" data-action="equals">=</button>
-    </div>
-
-    <div class="history-overlay" id="historyOverlay">
-        <div class="history-panel" id="historyPanel">
-            <div class="history-header">
-                <h3>Historial de Cálculos</h3>
-                <button type="button" class="utility-btn" id="btnClearHistory" title="Borrar Historial">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eb4d4b" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
+            <div class="resumen-row">
+                <div class="resumen-left">
+                    <span class="resumen-denom">S/ 200</span>
+                    <span class="resumen-qty" id="tot-qty-b200">0</span>
+                </div>
+                <div class="resumen-subtotal" id="tot-sub-b200">0.00</div>
             </div>
-            <div class="history-list" id="historyList">
-                <div class="empty-history">No hay operaciones recientes</div>
+
+            <div class="resumen-row">
+                <div class="resumen-left">
+                    <span class="resumen-denom">S/ 100</span>
+                    <span class="resumen-qty" id="tot-qty-b100">0</span>
+                </div>
+                <div class="resumen-subtotal" id="tot-sub-b100">0.00</div>
+            </div>
+
+            <div class="resumen-row">
+                <div class="resumen-left">
+                    <span class="resumen-denom">S/ 50</span>
+                    <span class="resumen-qty" id="tot-qty-b50">0</span>
+                </div>
+                <div class="resumen-subtotal" id="tot-sub-b50">0.00</div>
+            </div>
+
+            <div class="resumen-row">
+                <div class="resumen-left">
+                    <span class="resumen-denom">S/ 20</span>
+                    <span class="resumen-qty" id="tot-qty-b20">0</span>
+                </div>
+                <div class="resumen-subtotal" id="tot-sub-b20">0.00</div>
+            </div>
+
+            <div class="resumen-row">
+                <div class="resumen-left">
+                    <span class="resumen-denom">S/ 10</span>
+                    <span class="resumen-qty" id="tot-qty-b10">0</span>
+                </div>
+                <div class="resumen-subtotal" id="tot-sub-b10">0.00</div>
+            </div>
+
+            <div class="gran-total-box">
+                <span class="gran-total-label">TOTAL</span>
+                <span class="gran-total-monto" id="gran-total-display">0.00</span>
             </div>
         </div>
+
+        <div class="leyenda-colores">
+            Colores por grupo sumado: 🟢 1er ➔ 🟠 2do ➔ 🔵 3er ➔ 🟣 4to+
+        </div>
+
+        <!-- Botón para registrar en Google Sheets -->
+        <button class="btn-global btn-enviar-sheets" id="btn-sync-sheets" onclick="enviarAGoogleSheets()">📤 Enviar Remesa a Google Sheets</button>
+
+        <button class="btn-global btn-peligro" onclick="reiniciarDepositoTotal()">Borrar Todo el Total (Nuevo Cliente)</button>
     </div>
-</div>
 
-<script>
-    let expr = "";
-    let historyData = [];
+    <!-- PESTAÑA: BILLETES -->
+    <div id="Billetes" class="tab-content">
 
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0jWIN_loSAftgC56lUR5Yzrid3qW-qmJBqssVOUHzwZYidNSu2VLEZ-Wq8B2rq3dZ/exec";
+        <!-- Fila 200 -->
+        <div class="card">
+            <span class="card-denom">S/ 200</span>
+            <div class="controls">
+                <button class="btn-control" onclick="modificarInput('inp-b200', -1)">-</button>
+                <input type="number" id="inp-b200" class="input-qty" placeholder="0" oninput="actualizarVistaTotal()">
+                <button class="btn-control" onclick="modificarInput('inp-b200', 1)">+</button>
+            </div>
+            <button class="btn-save" id="btn-save-b200" onclick="guardarAlTotal('b200')"><span>+</span>Guardar</button>
+        </div>
 
-    const displayArea = document.getElementById('displayArea');
-    const liveResultArea = document.getElementById('liveResultArea');
-    const historyOverlay = document.getElementById('historyOverlay');
-    const historyPanel = document.getElementById('historyPanel');
-    const historyList = document.getElementById('historyList');
+        <!-- Fila 100 -->
+        <div class="card">
+            <span class="card-denom">S/ 100</span>
+            <div class="controls">
+                <button class="btn-control" onclick="modificarInput('inp-b100', -1)">-</button>
+                <input type="number" id="inp-b100" class="input-qty" placeholder="0" oninput="actualizarVistaTotal()">
+                <button class="btn-control" onclick="modificarInput('inp-b100', 1)">+</button>
+            </div>
+            <button class="btn-save" id="btn-save-b100" onclick="guardarAlTotal('b100')"><span>+</span>Guardar</button>
+        </div>
 
-    function sendToSheets(op, res) {
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ expression: op, result: res })
-        }).catch(err => console.error("Error Sheets:", err));
-    }
+        <!-- Fila 50 -->
+        <div class="card">
+            <span class="card-denom">S/ 50</span>
+            <div class="controls">
+                <button class="btn-control" onclick="modificarInput('inp-b50', -1)">-</button>
+                <input type="number" id="inp-b50" class="input-qty" placeholder="0" oninput="actualizarVistaTotal()">
+                <button class="btn-control" onclick="modificarInput('inp-b50', 1)">+</button>
+            </div>
+            <button class="btn-save" id="btn-save-b50" onclick="guardarAlTotal('b50')"><span>+</span>Guardar</button>
+        </div>
 
-    function renderDisplay() {
-        displayArea.innerText = expr.length === 0 ? "0" : expr;
-        const res = calcResult(expr);
-        liveResultArea.innerText = (res && expr.length > 0) ? "= " + res : "";
-    }
+        <!-- Fila 20 -->
+        <div class="card">
+            <span class="card-denom">S/ 20</span>
+            <div class="controls">
+                <button class="btn-control" onclick="modificarInput('inp-b20', -1)">-</button>
+                <input type="number" id="inp-b20" class="input-qty" placeholder="0" oninput="actualizarVistaTotal()">
+                <button class="btn-control" onclick="modificarInput('inp-b20', 1)">+</button>
+            </div>
+            <button class="btn-save" id="btn-save-b20" onclick="guardarAlTotal('b20')"><span>+</span>Guardar</button>
+        </div>
 
-    function calcResult(val) {
-        if (!val) return "";
-        try {
-            let s = val.replace(/×/g, '*').replace(/÷/g, '/').replace(/%/g, '/100');
-            if (/[+\-*\/]$/.test(s)) return "";
-            let out = Function('"use strict";return (' + s + ')')();
-            if (out !== undefined && !isNaN(out) && isFinite(out)) {
-                return Number.isInteger(out) ? out.toString() : parseFloat(out.toFixed(6)).toString();
+        <!-- Fila 10 -->
+        <div class="card">
+            <span class="card-denom">S/ 10</span>
+            <div class="controls">
+                <button class="btn-control" onclick="modificarInput('inp-b10', -1)">-</button>
+                <input type="number" id="inp-b10" class="input-qty" placeholder="0" oninput="actualizarVistaTotal()">
+                <button class="btn-control" onclick="modificarInput('inp-b10', 1)">+</button>
+            </div>
+            <button class="btn-save" id="btn-save-b10" onclick="guardarAlTotal('b10')"><span>+</span>Guardar</button>
+        </div>
+
+        <div class="action-bar">
+            <button class="btn-global btn-borrar-input" onclick="limpiarInputsActuales()">Borrar Actual</button>
+            <button class="btn-global btn-guardar-todo" onclick="guardarTodo()">Guardar Todo 💾</button>
+        </div>
+
+    </div>
+
+    <script>
+        // URL de tu implementación de Google Apps Script
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0jWIN_loSAftgC56lUR5Yzrid3qW-qmJBqssVOUHzwZYidNSu2VLEZ-Wq8B2rq3dZ/exec";
+
+        // BÓVEDA PRINCIPAL
+        let bodegaAcumulada = { b200: 0, b100: 0, b50: 0, b20: 0, b10: 0 };
+        // CONTADOR DE LOTES (Grupos de billetes guardados de la misma denominación)
+        let conteoLotes = { b200: 0, b100: 0, b50: 0, b20: 0, b10: 0 }; 
+
+        const valoresNominales = { b200: 200, b100: 100, b50: 50, b20: 20, b10: 10 };
+
+        function openTab(evt, tabName) {
+            let tabcontent = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
             }
-            return "";
-        } catch (e) {
-            return "";
+            let tablinks = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
         }
-    }
 
-    function handleInput(val) {
-        expr += val;
-        renderDisplay();
-    }
-
-    function handleClear() {
-        expr = "";
-        renderDisplay();
-    }
-
-    function handleBackspace() {
-        if (expr.length > 0) {
-            expr = expr.slice(0, -1);
-            renderDisplay();
+        function formatoMoneda(valor) {
+            return valor.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
-    }
 
-    function handleParens() {
-        const left = (expr.match(/\(/g) \vert{}\vert{} []).length;         const right = (expr.match(/\)/g) || []).length;
-        const last = expr.slice(-1);
-        if (left > right && !['+', '-', '×', '÷', '('].includes(last) && expr.length > 0) {
-            expr += ')';
-        } else {
-            expr += '(';
+        function modificarInput(id, cantidad) {
+            let input = document.getElementById(id);
+            let valorActual = parseInt(input.value) || 0;
+            let nuevoValor = valorActual + cantidad;
+            if (nuevoValor >= 0) {
+                input.value = nuevoValor;
+            } else {
+                input.value = ""; 
+            }
+            actualizarVistaTotal();
         }
-        renderDisplay();
-    }
 
-    function handlePlusMinus() {
-        if (!expr) return;
-        if (expr.startsWith('-')) {
-            expr = expr.slice(1);
-        } else {
-            expr = '-' + expr;
+        // MOTOR EN TIEMPO REAL CON LÓGICA DE COLORES
+        function actualizarVistaTotal() {
+            let sumaGranTotal = 0;
+
+            ['b200', 'b100', 'b50', 'b20', 'b10'].forEach(den => {
+                let cantidadEnBodega = bodegaAcumulada[den];
+                let cantidadEnInput = parseInt(document.getElementById('inp-' + den).value) || 0;
+                let loteActual = conteoLotes[den];
+
+                let cantidadVisual = cantidadEnBodega + cantidadEnInput;
+                let subtotalVisual = cantidadVisual * valoresNominales[den];
+
+                sumaGranTotal += subtotalVisual;
+
+                let spanQty = document.getElementById('tot-qty-' + den);
+                spanQty.innerText = cantidadVisual;
+
+                // Reiniciar clases de color
+                spanQty.className = 'resumen-qty'; 
+
+                if (cantidadVisual > 0) {
+                    let nivelColor = loteActual;
+
+                    if (loteActual === 0 && cantidadEnInput > 0) nivelColor = 1;
+
+                    if (loteActual > 0 && cantidadEnInput > 0) nivelColor = loteActual + 1;
+
+                    if (nivelColor > 4) nivelColor = 4;
+
+                    spanQty.classList.add('lote-' + nivelColor);
+                }
+
+                document.getElementById('tot-sub-' + den).innerText = cantidadVisual > 0 ? formatoMoneda(subtotalVisual) : "0.00";
+            });
+
+            document.getElementById('gran-total-display').innerText = formatoMoneda(sumaGranTotal);
         }
-        renderDisplay();
-    }
 
-    function handleEquals() {
-        const res = calcResult(expr);
-        if (res) {
-            historyData.push({ op: expr, res: res });
-            sendToSheets(expr, res);
-            updateHistoryUI();
-            expr = res;
-            renderDisplay();
-            liveResultArea.innerText = "";
+        function guardarAlTotal(denominacion) {
+            let idInput = 'inp-' + denominacion;
+            let cantidadIngresada = parseInt(document.getElementById(idInput).value) || 0;
+
+            if (cantidadIngresada > 0) {
+                bodegaAcumulada[denominacion] += cantidadIngresada;
+                conteoLotes[denominacion]++; 
+
+                document.getElementById(idInput).value = "";
+                actualizarVistaTotal();
+
+                let btn = document.getElementById('btn-save-' + denominacion);
+                btn.classList.add('success');
+                btn.innerHTML = "✅ Listo";
+                setTimeout(() => {
+                    btn.classList.remove('success');
+                    btn.innerHTML = "<span>+</span>Guardar";
+                }, 800);
+            }
         }
-    }
 
-    function updateHistoryUI() {
-        if (historyData.length === 0) {
-            historyList.innerHTML = '<div class="empty-history">No hay operaciones recientes</div>';
-            return;
+        function guardarTodo() {
+            let hayDatos = false;
+            ['b200', 'b100', 'b50', 'b20', 'b10'].forEach(den => {
+                if(parseInt(document.getElementById('inp-' + den).value) > 0) {
+                    guardarAlTotal(den);
+                    hayDatos = true;
+                }
+            });
+            if(hayDatos && navigator.vibrate) navigator.vibrate(100);
         }
-        historyList.innerHTML = "";
-        historyData.slice().reverse().forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'history-item';
-            row.innerHTML = `<div class="history-item-expr">${item.op} =</div><div class="history-item-res">${item.res}</div>`;
-            row.onclick = () => {
-                expr = item.res;
-                renderDisplay();
-                historyOverlay.style.display = 'none';
-            };
-            historyList.appendChild(row);
-        });
-    }
 
-    // Manejo de eventos del teclado sin depender de atributos en línea
-    document.querySelectorAll('.keypad button').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const val = btn.getAttribute('data-val');
-            const action = btn.getAttribute('data-action');
-
-            if (val) handleInput(val);
-            else if (action === 'clear') handleClear();
-            else if (action === 'equals') handleEquals();
-            else if (action === 'parens') handleParens();
-            else if (action === 'plusminus') handlePlusMinus();
-        });
-    });
-
-    document.getElementById('btnBackspace').addEventListener('click', handleBackspace);
-    document.getElementById('btnHistory').addEventListener('click', () => {
-        historyOverlay.style.display = 'block';
-    });
-    historyOverlay.addEventListener('click', (e) => {
-        if (!historyPanel.contains(e.target)) {
-            historyOverlay.style.display = 'none';
+        function limpiarInputsActuales() {
+            ['b200', 'b100', 'b50', 'b20', 'b10'].forEach(den => {
+                document.getElementById('inp-' + den).value = "";
+            });
+            actualizarVistaTotal();
         }
-    });
-    document.getElementById('btnClearHistory').addEventListener('click', () => {
-        historyData = [];
-        updateHistoryUI();
-    });
 
-    renderDisplay();
-</script>
+        function reiniciarDepositoTotal() {
+            bodegaAcumulada = { b200: 0, b100: 0, b50: 0, b20: 0, b10: 0 };
+            conteoLotes = { b200: 0, b100: 0, b50: 0, b20: 0, b10: 0 };
+
+            limpiarInputsActuales();
+            document.querySelectorAll('.tab-btn')[1].click(); 
+        }
+
+        // FUNCIÓN QUE ENVÍA LA REMESA A GOOGLE SHEETS
+        function enviarAGoogleSheets() {
+            let total = 0;
+            ['b200', 'b100', 'b50', 'b20', 'b10'].forEach(den => {
+                total += bodegaAcumulada[den] * valoresNominales[den];
+            });
+
+            if (total === 0) {
+                alert("Primero debes registrar billetes en el Total antes de enviar.");
+                return;
+            }
+
+            let btn = document.getElementById('btn-sync-sheets');
+            btn.innerText = "⏳ Enviando a Sheets...";
+            btn.disabled = true;
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    b200: bodegaAcumulada.b200,
+                    b100: bodegaAcumulada.b100,
+                    b50: bodegaAcumulada.b50,
+                    b20: bodegaAcumulada.b20,
+                    b10: bodegaAcumulada.b10,
+                    total: total
+                })
+            }).then(() => {
+                btn.innerText = "✅ ¡Guardado en Sheets!";
+                setTimeout(() => {
+                    btn.innerText = "📤 Enviar Remesa a Google Sheets";
+                    btn.disabled = false;
+                }, 2000);
+            }).catch(err => {
+                console.error("Error al enviar a Sheets:", err);
+                btn.innerText = "❌ Error al enviar";
+                setTimeout(() => {
+                    btn.innerText = "📤 Enviar Remesa a Google Sheets";
+                    btn.disabled = false;
+                }, 2000);
+            });
+        }
+
+        window.onload = actualizarVistaTotal;
+    </script>
 </body>
 </html>
