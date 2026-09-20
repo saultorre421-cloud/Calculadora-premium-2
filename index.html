@@ -8,6 +8,8 @@
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: manipulation;
         }
 
         body {
@@ -25,9 +27,8 @@
 
         .phone-frame {
             width: 100%;
-            max-width: 420px;
+            max-width: 430px;
             height: 100%;
-            max-height: 860px;
             background-color: #ffffff;
             display: flex;
             flex-direction: column;
@@ -35,7 +36,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        /* Pantalla de visualización */
         .display {
             flex: 1;
             display: flex;
@@ -48,13 +48,13 @@
         }
 
         .d-expression {
-            font-size: 46px;
+            font-size: 48px;
             font-weight: 500;
             color: #1a1a1a;
-            min-height: 56px;
+            min-height: 58px;
             text-align: right;
-            user-select: none;
             line-height: 1.2;
+            width: 100%;
         }
 
         .d-result {
@@ -64,14 +64,14 @@
             margin-top: 6px;
             font-weight: 400;
             text-align: right;
+            width: 100%;
         }
 
-        /* Barra de herramientas */
         .utility-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
+            padding: 8px 20px;
             border-bottom: 1px solid #f0f0f0;
             background: #ffffff;
         }
@@ -81,41 +81,37 @@
             border: none;
             cursor: pointer;
             color: #555;
-            padding: 8px;
+            padding: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            transition: background 0.2s;
         }
 
         .utility-btn:active {
             background-color: #f2f2f2;
         }
 
-        /* Teclado numérico */
         .keypad {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 1px;
             background-color: #ebebeb;
-            padding-bottom: env(safe-area-inset-bottom, 10px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         button.key {
             background-color: #ffffff;
             border: none;
             outline: none;
-            height: 72px;
-            font-size: 26px;
+            height: 74px;
+            font-size: 28px;
             font-weight: 500;
             color: #1a1a1a;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            user-select: none;
-            transition: background 0.1s;
         }
 
         button.key:active {
@@ -124,7 +120,7 @@
 
         button.key.op {
             color: #2b78e4;
-            font-size: 26px;
+            font-size: 28px;
         }
 
         button.key.clear {
@@ -133,15 +129,14 @@
 
         button.key.equals {
             background-color: #27ae60;
-            color: white;
-            font-size: 30px;
+            color: #ffffff;
+            font-size: 32px;
         }
 
         button.key.equals:active {
             background-color: #219150;
         }
 
-        /* Historial emergente */
         .history-overlay {
             position: absolute;
             top: 0;
@@ -150,7 +145,7 @@
             height: 100%;
             background: rgba(0,0,0,0.4);
             display: none;
-            z-index: 100;
+            z-index: 50;
         }
 
         .history-panel {
@@ -218,56 +213,52 @@
 <body>
 
 <div class="phone-frame">
-    <!-- Pantalla Superior -->
     <div class="display">
         <div class="d-expression" id="displayArea">0</div>
         <div class="d-result" id="liveResultArea"></div>
     </div>
 
-    <!-- Barra de Accesos Rápidos -->
     <div class="utility-bar">
-        <button class="utility-btn" onclick="toggleHistory(true)" title="Historial">
+        <button type="button" class="utility-btn" id="btnHistory" title="Historial">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         </button>
-        <button class="utility-btn" onclick="handleBackspace()" title="Retroceso">
+        <button type="button" class="utility-btn" id="btnBackspace" title="Retroceso">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path><line x1="18" y1="9" x2="12" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line></svg>
         </button>
     </div>
 
-    <!-- Teclado Numérico -->
     <div class="keypad">
-        <button class="key clear" onclick="handleClear()">C</button>
-        <button class="key op" onclick="insertParentheses()">( )</button>
-        <button class="key op" onclick="insertText('%')">%</button>
-        <button class="key op" onclick="insertText('÷')">÷</button>
+        <button type="button" class="key clear" data-action="clear">C</button>
+        <button type="button" class="key op" data-action="parens">( )</button>
+        <button type="button" class="key op" data-val="%">%</button>
+        <button type="button" class="key op" data-val="÷">÷</button>
 
-        <button class="key" onclick="insertText('7')">7</button>
-        <button class="key" onclick="insertText('8')">8</button>
-        <button class="key" onclick="insertText('9')">9</button>
-        <button class="key op" onclick="insertText('×')">×</button>
+        <button type="button" class="key" data-val="7">7</button>
+        <button type="button" class="key" data-val="8">8</button>
+        <button type="button" class="key" data-val="9">9</button>
+        <button type="button" class="key op" data-val="×">×</button>
 
-        <button class="key" onclick="insertText('4')">4</button>
-        <button class="key" onclick="insertText('5')">5</button>
-        <button class="key" onclick="insertText('6')">6</button>
-        <button class="key op" onclick="insertText('-')">-</button>
+        <button type="button" class="key" data-val="4">4</button>
+        <button type="button" class="key" data-val="5">5</button>
+        <button type="button" class="key" data-val="6">6</button>
+        <button type="button" class="key op" data-val="-">-</button>
 
-        <button class="key" onclick="insertText('1')">1</button>
-        <button class="key" onclick="insertText('2')">2</button>
-        <button class="key" onclick="insertText('3')">3</button>
-        <button class="key op" onclick="insertText('+')">+</button>
+        <button type="button" class="key" data-val="1">1</button>
+        <button type="button" class="key" data-val="2">2</button>
+        <button type="button" class="key" data-val="3">3</button>
+        <button type="button" class="key op" data-val="+">+</button>
 
-        <button class="key op" onclick="insertPlusMinus()">±</button>
-        <button class="key" onclick="insertText('0')">0</button>
-        <button class="key" onclick="insertText('.')">.</button>
-        <button class="key equals" onclick="commitToHistory()">=</button>
+        <button type="button" class="key op" data-action="plusminus">±</button>
+        <button type="button" class="key" data-val="0">0</button>
+        <button type="button" class="key" data-val=".">.</button>
+        <button type="button" class="key equals" data-action="equals">=</button>
     </div>
 
-    <!-- Panel de Historial Deslizable -->
-    <div class="history-overlay" id="historyOverlay" onclick="toggleHistory(false)">
-        <div class="history-panel" onclick="event.stopPropagation()">
+    <div class="history-overlay" id="historyOverlay">
+        <div class="history-panel" id="historyPanel">
             <div class="history-header">
                 <h3>Historial de Cálculos</h3>
-                <button class="utility-btn" onclick="clearAllHistory()" title="Borrar Historial">
+                <button type="button" class="utility-btn" id="btnClearHistory" title="Borrar Historial">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eb4d4b" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
             </div>
@@ -279,7 +270,7 @@
 </div>
 
 <script>
-    let currentExpression = "";
+    let expr = "";
     let historyData = [];
 
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0jWIN_loSAftgC56lUR5Yzrid3qW-qmJBqssVOUHzwZYidNSu2VLEZ-Wq8B2rq3dZ/exec";
@@ -287,83 +278,32 @@
     const displayArea = document.getElementById('displayArea');
     const liveResultArea = document.getElementById('liveResultArea');
     const historyOverlay = document.getElementById('historyOverlay');
+    const historyPanel = document.getElementById('historyPanel');
     const historyList = document.getElementById('historyList');
 
-    function sendToSheets(expr, res) {
+    function sendToSheets(op, res) {
         fetch(SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                expression: expr,
-                result: res
-            })
-        }).then(() => {
-            console.log("Enviado a Google Sheets");
-        }).catch(err => {
-            console.error("Error:", err);
-        });
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expression: op, result: res })
+        }).catch(err => console.error("Error Sheets:", err));
     }
 
-    function updateDisplay() {
-        displayArea.innerText = currentExpression || "0";
-        updateLiveResult();
+    function renderDisplay() {
+        displayArea.innerText = expr.length === 0 ? "0" : expr;
+        const res = calcResult(expr);
+        liveResultArea.innerText = (res && expr.length > 0) ? "= " + res : "";
     }
 
-    function insertText(val) {
-        currentExpression += val;
-        updateDisplay();
-    }
-
-    function handleBackspace() {
-        if (currentExpression.length > 0) {
-            currentExpression = currentExpression.slice(0, -1);
-            updateDisplay();
-        }
-    }
-
-    function handleClear() {
-        currentExpression = "";
-        liveResultArea.innerText = "";
-        updateDisplay();
-    }
-
-    function insertParentheses() {
-        const leftCount = (currentExpression.match(/\(/g) \vert{}\vert{} []).length;         const rightCount = (currentExpression.match(/\)/g) || []).length;
-        const lastChar = currentExpression.slice(-1);
-
-        if (leftCount > rightCount && !['+', '-', '×', '÷', '('].includes(lastChar) && currentExpression.length > 0) {
-            insertText(')');
-        } else {
-            insertText('(');
-        }
-    }
-
-    function insertPlusMinus() {
-        if (!currentExpression) return;
-        if (currentExpression.startsWith('-')) {
-            currentExpression = currentExpression.slice(1);
-        } else {
-            currentExpression = '-' + currentExpression;
-        }
-        updateDisplay();
-    }
-
-    function calculateLive() {
-        if (!currentExpression) return "";
+    function calcResult(val) {
+        if (!val) return "";
         try {
-            let sanitized = currentExpression
-                .replace(/×/g, '*')
-                .replace(/÷/g, '/')
-                .replace(/%/g, '/100');
-
-            if (/[+\-*\/]$/.test(sanitized)) return "";
-
-            let total = Function('"use strict";return (' + sanitized + ')')();
-            if (total !== undefined && !isNaN(total) && isFinite(total)) {
-                return Number.isInteger(total) ? total.toString() : parseFloat(total.toFixed(6)).toString();
+            let s = val.replace(/×/g, '*').replace(/÷/g, '/').replace(/%/g, '/100');
+            if (/[+\-*\/]$/.test(s)) return "";
+            let out = Function('"use strict";return (' + s + ')')();
+            if (out !== undefined && !isNaN(out) && isFinite(out)) {
+                return Number.isInteger(out) ? out.toString() : parseFloat(out.toFixed(6)).toString();
             }
             return "";
         } catch (e) {
@@ -371,37 +311,57 @@
         }
     }
 
-    function updateLiveResult() {
-        const res = calculateLive();
-        if (res && res !== "Error" && currentExpression.length > 0) {
-            liveResultArea.innerText = "= " + res;
+    function handleInput(val) {
+        expr += val;
+        renderDisplay();
+    }
+
+    function handleClear() {
+        expr = "";
+        renderDisplay();
+    }
+
+    function handleBackspace() {
+        if (expr.length > 0) {
+            expr = expr.slice(0, -1);
+            renderDisplay();
+        }
+    }
+
+    function handleParens() {
+        const left = (expr.match(/\(/g) \vert{}\vert{} []).length;         const right = (expr.match(/\)/g) || []).length;
+        const last = expr.slice(-1);
+        if (left > right && !['+', '-', '×', '÷', '('].includes(last) && expr.length > 0) {
+            expr += ')';
         } else {
+            expr += '(';
+        }
+        renderDisplay();
+    }
+
+    function handlePlusMinus() {
+        if (!expr) return;
+        if (expr.startsWith('-')) {
+            expr = expr.slice(1);
+        } else {
+            expr = '-' + expr;
+        }
+        renderDisplay();
+    }
+
+    function handleEquals() {
+        const res = calcResult(expr);
+        if (res) {
+            historyData.push({ op: expr, res: res });
+            sendToSheets(expr, res);
+            updateHistoryUI();
+            expr = res;
+            renderDisplay();
             liveResultArea.innerText = "";
         }
     }
 
-    function commitToHistory() {
-        let liveResult = calculateLive();
-        if (liveResult && liveResult !== "Error") {
-            historyData.push({
-                expr: currentExpression,
-                res: liveResult
-            });
-            renderHistory();
-
-            sendToSheets(currentExpression, liveResult);
-
-            currentExpression = liveResult;
-            updateDisplay();
-            liveResultArea.innerText = "";
-        }
-    }
-
-    function toggleHistory(show) {
-        historyOverlay.style.display = show ? 'block' : 'none';
-    }
-
-    function renderHistory() {
+    function updateHistoryUI() {
         if (historyData.length === 0) {
             historyList.innerHTML = '<div class="empty-history">No hay operaciones recientes</div>';
             return;
@@ -410,24 +370,46 @@
         historyData.slice().reverse().forEach(item => {
             const row = document.createElement('div');
             row.className = 'history-item';
-            row.innerHTML = `<div class="history-item-expr">${item.expr} =</div>
-                             <div class="history-item-res">${item.res}</div>`;
+            row.innerHTML = `<div class="history-item-expr">${item.op} =</div><div class="history-item-res">${item.res}</div>`;
             row.onclick = () => {
-                currentExpression = item.res;
-                updateDisplay();
-                toggleHistory(false);
+                expr = item.res;
+                renderDisplay();
+                historyOverlay.style.display = 'none';
             };
             historyList.appendChild(row);
         });
     }
 
-    function clearAllHistory() {
-        historyData = [];
-        renderHistory();
-    }
+    // Manejo de eventos del teclado sin depender de atributos en línea
+    document.querySelectorAll('.keypad button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const val = btn.getAttribute('data-val');
+            const action = btn.getAttribute('data-action');
 
-    // Inicializar visualización con 0
-    updateDisplay();
+            if (val) handleInput(val);
+            else if (action === 'clear') handleClear();
+            else if (action === 'equals') handleEquals();
+            else if (action === 'parens') handleParens();
+            else if (action === 'plusminus') handlePlusMinus();
+        });
+    });
+
+    document.getElementById('btnBackspace').addEventListener('click', handleBackspace);
+    document.getElementById('btnHistory').addEventListener('click', () => {
+        historyOverlay.style.display = 'block';
+    });
+    historyOverlay.addEventListener('click', (e) => {
+        if (!historyPanel.contains(e.target)) {
+            historyOverlay.style.display = 'none';
+        }
+    });
+    document.getElementById('btnClearHistory').addEventListener('click', () => {
+        historyData = [];
+        updateHistoryUI();
+    });
+
+    renderDisplay();
 </script>
 </body>
 </html>
